@@ -18,7 +18,6 @@ Tras cargar y limpiar el conjunto de datos original, eliminamos filas con valore
 
 1. **Codificación de variables categóricas**: las variables `surface` (superficie de juego), `round` (ronda del torneo) y `tourney_name` (nombre del torneo) se convirtieron en variables *one-hot* para incluirlas como predictores en los modelos.  
 2. **Análisis de colinealidad**: calculamos el Factor de Inflación de Varianza (VIF) para cada variable numérica, descartando aquellas con VIF > 10 para reducir redundancias.  
-3. **Evaluación de poder explicativo**: medimos la información mutua entre cada predictor y la duración (`minutes`), descartando variables con baja contribución informativa.  
 
 Como resultado, las variables `round` y `tourney_name` fueron finalmente excluidas del modelo: aunque mostraban correlaciones con la duración, su inclusión elevaba excesivamente la dimensionalidad y presentaba colinealidad alta con otras variables (por ejemplo, superficie), lo cual comprometía la estabilidad y capacidad de generalización de los modelos.
 

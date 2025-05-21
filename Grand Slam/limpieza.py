@@ -299,24 +299,6 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         plt.tight_layout()
         plt.show()
         
-        # Step 2: Mutual Information between 'tourney_name' & 'round' and 'minutes'
-        target = 'minutes'
-        categorical_cols = ['tourney_name', 'round']
-        
-        df_mi = df_check.dropna(subset=[target])
-        X_cat = pd.get_dummies(df_mi[categorical_cols], drop_first=True)
-        y_mi = df_mi[target]
-        
-        mi_scores = mutual_info_regression(X_cat, y_mi, discrete_features=True)
-        mi_df = pd.Series(mi_scores, index=X_cat.columns).sort_values(ascending=False)
-        
-        plt.figure(figsize=(10, 5))
-        mi_df.plot(kind='barh')
-        plt.title("📈 Mutual Information: tourney_name & round vs. Minutes")
-        plt.xlabel("MI Score")
-        plt.tight_layout()
-        plt.show()
-        
         # 1) Copy your five‐set DataFrame before dropping leakage cols
         rf_df = best_of_five_clean.copy()
 
