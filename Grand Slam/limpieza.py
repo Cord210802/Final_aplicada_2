@@ -35,6 +35,8 @@ import seaborn as sns
 from sklearn.feature_selection import mutual_info_regression
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
 
 # ============================================================================================
 # STEP 1: DATA LOADING AND CLEANING (from limpieza_grupos.py)
@@ -194,7 +196,6 @@ def process_five_set_matches(df):
     
     # Remove matches with missing historical stats
     best_of_five_clean = best_of_five.dropna(subset=agg_cols)
-
     # Step 7: Remove Data Leakage
     
     # Remove in-match statistics that would cause data leakage
@@ -207,7 +208,7 @@ def process_five_set_matches(df):
     id_text_cols = [
         'tourney_id', 
         'winner_id', 'loser_id',
-        'score'
+        'score', 'best_of','draw_size'
     ]
 
     # Combine all columns to drop
@@ -220,6 +221,7 @@ def process_five_set_matches(df):
     best_of_five_clean = best_of_five_clean.loc[:, ~best_of_five_clean.columns.duplicated()]
     
     print(f"Five-set match processing completed. Dataset shape: {best_of_five_clean.shape}")
+    
     return best_of_five_clean
 
 # ============================================================================================
@@ -257,6 +259,26 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
                 plt.tight_layout()
                 plt.show()
         
+        #Distribution of minutes by round
+        # Prepare the data: drop any rows missing 'minutes' or 'round'
+        df_plot = best_of_five_clean.dropna(subset=['minutes', 'round'])
+
+        plt.figure(figsize=(12, 6))
+        sns.boxplot(
+            data=df_plot,
+            x='round',
+            y='minutes',
+            color='steelblue',    # same color for every box
+            showfliers=False      # hide outliers
+        )
+
+        plt.title('Distribution of Match Duration (minutes) by Round')
+        plt.xlabel('Round')
+        plt.ylabel('Minutes')
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        plt.show()
+
         # Step 2: Mutual Information between 'tourney_name' & 'round' and 'minutes'
         target = 'minutes'
         categorical_cols = ['tourney_name', 'round']
@@ -275,13 +297,53 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         plt.tight_layout()
         plt.show()
         
-        print("\n🧠 Sample rows to inspect values:")
-        print(df_check[['tourney_name', 'round']].head())
+        # 1) Copy your five‐set DataFrame before dropping leakage cols
+        rf_df = best_of_five_clean.copy()
+
+        # 2) Separate target
+        y = rf_df['minutes']
+
+        # 3) Build X with only numeric predictors (int64 & float64)
+        X = rf_df.drop(columns=['minutes']) \
+                .select_dtypes(include=['int64', 'float64'])
+
+        # 4) Drop rows with missing data
+        data = pd.concat([X, y], axis=1).dropna()
+        X_clean = data[X.columns]
+        y_clean = data['minutes']
+
+        # 5) Split into train/test sets
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_clean, y_clean, test_size=0.2, random_state=42
+        )
+
+        # 6) Train the Random Forest regressor
+        rf = RandomForestRegressor(n_estimators=100, random_state=42)
+        rf.fit(X_train, y_train)
+
+        # 7) Compute feature importances
+        importances = pd.Series(rf.feature_importances_, index=X_clean.columns)
+        importances = importances.sort_values(ascending=False)
+
+        # 8) Print them
+        print("🏆 Random Forest Feature Importances (numerical vars only):")
+        for feat, imp in importances.items():
+            print(f"{feat:25s} → {imp:.4f}")
+
+        # 9) Plot them
+        plt.figure(figsize=(12, 8))
+        importances.plot(kind='bar')
+        plt.title("RF Feature Importances (Numerical Variables Only)")
+        plt.xlabel("Feature")
+        plt.ylabel("Importance")
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        plt.show()
     
     # Step 3: Drop irrelevant or leakage-prone columns
     drop_cols = [
         'tourney_date', 'winner_name', 'loser_name', 'winner_ioc', 'loser_ioc',
-        'winner_entry', 'loser_entry', 'draw_size', 'tourney_level', 'match_num', 'best_of',
+        'winner_entry', 'loser_entry', 'tourney_level', 'match_num',
         'winner_hand', 'loser_hand', 'tourney_name', 'round'
     ]
     
@@ -420,7 +482,3 @@ def main(file_path, show_plots=True):
 if __name__ == "__main__":
     file_path = "/home/cord2108/ITAM/Aplicada/Proyecto_final/atp_data/atp_matches_till_2022.csv"
     final_data = main(file_path, show_plots=True)
-    
-    # Save the processed data to a CSV file
-    final_data.to_csv("tennis_grand_slam_processed.csv", index=False)
-    print("Final dataset saved to 'tennis_grand_slam_processed.csv'")
