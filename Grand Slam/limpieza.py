@@ -42,7 +42,7 @@ from sklearn.model_selection import train_test_split
 # STEP 1: DATA LOADING AND CLEANING (from limpieza_grupos.py)
 # ============================================================================================
 
-def load_and_clean_data(file_path):
+def load_and_clean_data(file_path, year_start = None, year_end = None):
     """
     Load the ATP matches data and perform initial cleaning
     
@@ -52,7 +52,6 @@ def load_and_clean_data(file_path):
     Returns:
         pd.DataFrame: Cleaned dataset with initial feature engineering
     """
-    print("Loading and cleaning data...")
     
     # 1) Load the CSV
     matches = pd.read_csv(file_path)
@@ -72,7 +71,11 @@ def load_and_clean_data(file_path):
         df['tourney_date'].astype(str),
         format='%Y%m%d'
     )
-    
+     # Optional year filtering
+    if year_start is not None:
+        df = df[df['tourney_date'].dt.year >= year_start]
+    if year_end is not None:
+        df = df[df['tourney_date'].dt.year <= year_end]
     # Create DataFrame for modeling
     df_model = df.copy()
     
@@ -80,7 +83,6 @@ def load_and_clean_data(file_path):
     df_model = df_model.drop(columns=["loser_seed", "winner_seed"])
     
     # Feature Engineering
-    print("Creating engineered features...")
     
     # Ranking-based features
     df_model['rank_diff'] = abs(df_model['winner_rank'] - df_model['loser_rank'])
@@ -97,7 +99,6 @@ def load_and_clean_data(file_path):
     # Surface standardization
     df_model['surface'] = df_model['surface'].replace('Carpet', 'Hard')
     
-    print(f"Data cleaning completed. Dataset shape: {df_model.shape}")
     return df_model
 
 # ============================================================================================
@@ -114,11 +115,9 @@ def process_five_set_matches(df):
     Returns:
         pd.DataFrame: Processed dataset with rolling statistics for five-set matches
     """
-    print("Processing five-set matches...")
     
     # Extract only five-set matches
     best_of_five = df[df["best_of"] == 5]
-    print(f"Number of five-set matches: {len(best_of_five)}")
     
     # Define the key tennis statistics for feature engineering
     stats = ['ace', 'df', 'svpt', '1stIn', '1stWon', '2ndWon', 'SvGms', 'bpSaved', 'bpFaced']
@@ -152,8 +151,6 @@ def process_five_set_matches(df):
     
     # Define lookback window for rolling statistics (last 5 matches)
     N = 5  
-    
-    print(f"Calculating {N}-match rolling averages for player statistics...")
     
     # Calculate rolling average for each statistic
     for s in stats:
@@ -220,7 +217,6 @@ def process_five_set_matches(df):
     # Step 8: Final Data Cleaning - Handle duplicate columns
     best_of_five_clean = best_of_five_clean.loc[:, ~best_of_five_clean.columns.duplicated()]
     
-    print(f"Five-set match processing completed. Dataset shape: {best_of_five_clean.shape}")
     
     return best_of_five_clean
 
@@ -239,12 +235,10 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
     Returns:
         pd.DataFrame: Final processed dataset ready for modeling
     """
-    print("Analyzing Grand Slam matches...")
     
     # Step 0: Filter Grand Slams only
     best_of_five = best_of_five_clean.copy()
     best_of_five_clean = best_of_five_clean[best_of_five_clean["tourney_level"] == "G"]
-    print(f"Number of Grand Slam matches: {len(best_of_five_clean)}")
     
     if show_plots:
         # Step 1: Categorical Analysis for 'tourney_name' and 'round'
@@ -338,11 +332,6 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         importances = pd.Series(rf.feature_importances_, index=X_clean.columns)
         importances = importances.sort_values(ascending=False)
 
-        # 8) Print them
-        print("🏆 Random Forest Feature Importances (numerical vars only):")
-        for feat, imp in importances.items():
-            print(f"{feat:25s} → {imp:.4f}")
-
         # 9) Plot them
         plt.figure(figsize=(12, 8))
         importances.plot(kind='bar')
@@ -352,9 +341,7 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         plt.xticks(rotation=45, ha='right')
         plt.tight_layout()
         plt.show()
-    
-    print(best_of_five["tourney_date"].min())
-    print(best_of_five["tourney_date"].max())
+
     # Step 3: Drop irrelevant or leakage-prone columns
     drop_cols = [
         'tourney_date', 'winner_name', 'loser_name', 'winner_ioc', 'loser_ioc',
@@ -372,18 +359,10 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
     categorical_vars = ['surface']
     
     def build_design_matrix(df, categorical_vars):
-        for var in categorical_vars:
-            if var not in df.columns:
-                print(f"❌ Column not found: {var}")
-            else:
-                print(f"✅ {var} found — dtype: {df[var].dtype}, unique values: {df[var].nunique()}")
         
         valid_cats = [col for col in categorical_vars if col in df.columns]
-        
-        print("\n🔄 Applying one-hot encoding...")
         try:
             df_encoded = pd.get_dummies(df, columns=valid_cats, drop_first=True)
-            print("✅ One-hot encoding successful.")
         except Exception as e:
             print("❌ Error during get_dummies:")
             print(e)
@@ -392,14 +371,9 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         for col in df_encoded.select_dtypes(include='bool').columns:
             df_encoded[col] = df_encoded[col].astype(float)
         
-        print("\n📐 Shape after encoding:", df_encoded.shape)
-        print("🧼 Column types:", df_encoded.dtypes.value_counts())
-        
         numeric_df = df_encoded.select_dtypes(include='number')
         if numeric_df.shape[1] < df_encoded.shape[1]:
             dropped = df_encoded.columns.difference(numeric_df.columns)
-            print("\n⚠️ Dropped non-numeric columns:")
-            print(dropped.tolist())
         else:
             print("\n✅ All columns are numeric and ready for modeling.")
         
@@ -423,7 +397,7 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
     
     X_clean = X.dropna(subset=cols_with_nans)
     y_clean = y.loc[X_clean.index]
-    print(f"✅ Rows after dropping NaNs: {X_clean.shape[0]}")
+
     
     # Step 7: Remove outliers from y
     Q1 = y_clean.quantile(0.25)
@@ -435,7 +409,6 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
     mask = (y_clean >= lower_bound) & (y_clean <= upper_bound)
     X_no_outliers = X_clean.loc[mask]
     y_no_outliers = y_clean.loc[mask]
-    print(f"✅ Rows after removing outliers: {X_no_outliers.shape[0]}")
     
     # Step 8: VIF Analysis on numerical-only
     categorical_dummy_cols = [col for col in X_no_outliers.columns if 'surface_' in col]
@@ -456,7 +429,6 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
     print(f"\n❌ Dropping high VIF features: {high_vif_features}")
     
     X_final = X_no_outliers.drop(columns=high_vif_features)
-    print(f"✅ Final shape after dropping multicollinear numerical features: {X_final.shape}")
     
     # Create final dataset with target variable
     final_data = X_final.copy()
@@ -468,7 +440,7 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
 # MAIN EXECUTION
 # ============================================================================================
 
-def main(file_path, show_plots=True):
+def main(file_path, show_plots=True, year_start=None, year_end=None):
     """
     Execute the complete tennis data analysis pipeline
     
@@ -480,7 +452,7 @@ def main(file_path, show_plots=True):
         pd.DataFrame: Final processed dataset ready for modeling
     """
     # Step 1: Load and clean data
-    cleaned_data = load_and_clean_data(file_path)
+    cleaned_data = load_and_clean_data(file_path, year_start, year_end)
     
     # Step 2: Process five-set matches
     best_of_five_clean = process_five_set_matches(cleaned_data)
