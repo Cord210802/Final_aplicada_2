@@ -1,111 +1,97 @@
-# Introducción al Problema: Predicción de la Duración de Partidos de Tenis
+# Predicción de la Duración de Partidos de Tenis en Torneos Grand Slam
 
-## Contexto del Problema
+## 1. Introducción
 
-En el mundo del tenis profesional, la duración de un partido es una variable crucial que impacta múltiples aspectos de este deporte. Desde la planificación de transmisiones televisivas hasta la preparación física de los jugadores, conocer con anticipación cuánto tiempo durará un encuentro representa un valor significativo para diferentes stakeholders.
+Nuestro proyecto tiene como objetivo aplicar los modelos lineales vistos en el curso de Estadística Aplicada II a un problema real del ámbito deportivo: la predicción de la duración de partidos de tenis profesional masculino en torneos Grand Slam. A través del análisis estadístico, la limpieza e ingeniería de datos, y la estimación mediante modelos predictivos, se pretende identificar patrones que permitan anticipar la duración de un encuentro utilizando únicamente información disponible antes de su inicio.
 
-Los partidos de tenis pueden variar dramáticamente en duración: desde encuentros que se resuelven en menos de una hora hasta épicas batallas que se extienden por más de cinco horas. Esta variabilidad está influenciada por múltiples factores como el formato del torneo (mejor de 3 o 5 sets), la superficie de juego, las características de los jugadores involucrados, y la etapa del torneo en la que se desarrolla el partido.
+## 2. Delimitación y Relevancia del Problema
 
-## Relevancia del Problema
+Para asegurar consistencia y comparabilidad, hemos restringido el universo de estudio a partidos masculinos que se disputaron en los cuatro Grand Slams (Australian Open, Roland Garros, Wimbledon y US Open) entre enero de 1991 y agosto de 2022. Esta decisión elimina la heterogeneidad de formatos (por ejemplo, mejor de tres sets) y aprovecha la riqueza de datos disponible en estas competiciones. Predecir la duración de un partido antes de su inicio permite a organizadores y transmisiones televisivas anticiparse a posibles retrasos o extensiones, y a entrenadores gestionar la carga física de los jugadores.
 
-La predicción precisa de la duración de partidos de tenis tiene implicaciones prácticas importantes:
+## 3. Ingeniería de Variables y Prevención de Fuga de Información
 
-### 1. **Gestión de Transmisiones y Media**
-- Las cadenas televisivas necesitan planificar su programación con precisión
-- Los servicios de streaming requieren estimaciones para optimizar la asignación de recursos
-- La planificación publicitaria se beneficia de predicciones más exactas
+Una pieza clave del análisis ha sido evitar la llamada **fuga de información** (data leakage). Para ello, todas las variables predictoras se calcularon sólo con datos anteriores al inicio de cada partido. Concretamente, se construyeron estadísticas agregadas de rendimiento para cada jugador a partir de una **ventana desfasada de cinco encuentros previos**. Estas variables incluyen promedios de aces, dobles faltas, porcentaje de puntos ganados con el primer y segundo servicio, entre otras métricas fundamentales. Al usar únicamente información histórica, garantizamos que el modelo refleja el conocimiento real disponible en el momento de la predicción.
 
-### 2. **Operaciones de Torneos**
-- Programación eficiente de partidos en las diferentes canchas
-- Gestión de personal (árbitros, recogepelotas, personal médico)
-- Planificación logística para espectadores (transporte, catering, etc.)
+## 4. Transformación y Selección de Variables
 
-### 3. **Preparación de Jugadores y Entrenadores**
-- Estrategias de preparación física específicas
-- Planificación nutricional e hidratación
-- Gestión de energía durante torneos largos
+Tras cargar y limpiar el conjunto de datos original, eliminamos filas con valores faltantes en variables críticas. Dado que contamos con un volumen muy amplio de partidos (más de 10 000 observaciones), la eliminación de estas filas no provocó una reducción significativa en la información disponible ni en la representatividad del conjunto de entrenamiento. A continuación aplicamos las siguientes transformaciones:
 
-## Preguntas de Investigación
+1. **Codificación de variables categóricas**: las variables `surface` (superficie de juego), `round` (ronda del torneo) y `tourney_name` (nombre del torneo) se convirtieron en variables *one-hot* para incluirlas como predictores en los modelos.  
+2. **Análisis de colinealidad**: calculamos el Factor de Inflación de Varianza (VIF) para cada variable numérica, descartando aquellas con VIF > 10 para reducir redundancias.  
+3. **Evaluación de poder explicativo**: medimos la información mutua entre cada predictor y la duración (`minutes`), descartando variables con baja contribución informativa.  
 
-Este análisis estadístico busca responder las siguientes preguntas de investigación:
+Como resultado, las variables `round` y `tourney_name` fueron finalmente excluidas del modelo: aunque mostraban correlaciones con la duración, su inclusión elevaba excesivamente la dimensionalidad y presentaba colinealidad alta con otras variables (por ejemplo, superficie), lo cual comprometía la estabilidad y capacidad de generalización de los modelos.
 
-### Pregunta Principal:
-**¿Es posible predecir la duración de un partido de tenis utilizando únicamente información disponible antes de que comience el encuentro?**
+## 5. Modelos Predictivos
 
-### Preguntas Específicas:
+### 5.1. Regresión Lineal Múltiple
 
-1. **¿Qué variables pre-partido tienen mayor influencia en la duración del encuentro?**
-   - ¿Cómo afecta el formato del partido (mejor de 3 vs. 5 sets)?
-   - ¿Cuál es el impacto de la superficie de juego (arcilla, césped, pista dura)?
-   - ¿La etapa del torneo influye en la duración esperada?
+Primero entrenamos un modelo OLS (Ordinary Least Squares) con las variables numéricas preprocesadas. Este enfoque facilita la interpretación de coeficientes y permite verificar los supuestos clásicos de linealidad, homocedasticidad y normalidad de residuos. Tras ajustar el modelo, generamos los siguientes gráficos de diagnóstico:
 
-2. **¿Las características de los jugadores son predictores significativos?**
-   - ¿La diferencia de ranking entre jugadores afecta la duración?
-   - ¿La edad de los competidores tiene relevancia predictiva?
+- **Residuos vs Valores Ajustados**  
+- **Gráfico Q–Q de residuos**  
+- **Escala–Local (√|residuo estandarizado| vs ajustados)**  
+- **Histograma de residuos con curva normal superpuesta**  
 
-3. **¿Existen patrones específicos según el nivel del torneo?**
-   - ¿Los Grand Slams tienen comportamientos diferentes a otros torneos?
-   - ¿Cómo varían las duraciones entre Masters 1000?
+> **Inserta aquí** las cuatro gráficas de diagnóstico resultantes del modelo de regresión lineal, en el mismo orden:  
+> 1. Residuos vs Ajustados  
+> 2. Q–Q  
+> 3. Escala–Local  
+> 4. Histograma de residuos  
 
-4. **¿Qué nivel de precisión es alcanzable en estas predicciones?**
-   - ¿Cuál es el error promedio esperado en las predicciones?
-   - ¿Existen ciertos tipos de partidos más predecibles que otros?
+El análisis de estas gráficas mostró que los supuestos clásicos de la regresión lineal no se cumplen plenamente: en el gráfico **Residuos vs Valores Ajustados** aparece un patrón en forma de embudo (mayor dispersión de residuos a medida que aumentan los valores predichos), lo que evidencia heterocedasticidad; en el **Gráfico Q–Q de Residuos** los puntos extremos se desvían de la línea de referencia, indicando colas más pesadas que las de una distribución normal; el **Histograma de Residuos** presenta un ligero sesgo hacia la derecha y varios valores atípicos; y, aunque en **Leverage vs Residuos** no hay observaciones con leverage excesivo, la **Distancia de Cook** identifica algunos puntos moderadamente influyentes que podrían distorsionar el ajuste global. En conjunto, estos hallazgos sugieren considerar transformaciones de la variable respuesta (por ejemplo, aplicar un logaritmo) o recurrir a métodos más robustos frente a violaciones de homocedasticidad y normalidad (como regresión ponderada o modelos de machine learning).
 
-## Enfoque Metodológico
 
-Para abordar estas preguntas, utilizaremos técnicas de modelado estadístico, específicamente regresión lineal, aplicadas a un dataset histórico de partidos de tenis profesional masculino. El análisis se centrará en variables disponibles antes del inicio del partido, evitando cualquier filtración de información que comprometería la aplicabilidad práctica del modelo.
+### 5.2. Random Forest
 
-Este enfoque nos permitirá no solo desarrollar un modelo predictivo funcional, sino también generar insights valiosos sobre los factores que determinan la duración de los encuentros tenísticos en el circuito profesional.
+Para capturar posibles no linealidades e interacciones complejas, complementamos el modelo lineal con un **Random Forest** de 100 árboles. Este método construye múltiples árboles sobre subsamples aleatorias y promedia sus predicciones, lo que suele mejorar la robustez frente al ruido. Empleamos los hiperparámetros:
 
----
-# Justificación del Enfoque Estadístico
+- `n_estimators = 100`  
+- `max_depth = None`  
+- `min_samples_split = 2`  
+- `min_samples_leaf = 1`  
+- `max_features = "auto"`  
+- `random_state = 42`  
 
-## Delimitación del Universo de Análisis
+Posteriormente, sobre el conjunto de test calculamos los residuos (`observado – predicho`) y generamos los mismos cuatro gráficos de diagnóstico.  
 
-El presente análisis se enfoca exclusivamente en partidos correspondientes a torneos del **circuito Grand Slam** masculino, caracterizados por jugarse al **mejor de cinco sets**. Esta restricción no es arbitraria: responde a una decisión metodológica que busca **reducir la heterogeneidad estructural del problema** y mejorar la precisión de las inferencias y predicciones. En comparación con otros torneos del circuito ATP (donde los partidos se juegan al mejor de tres sets), los Grand Slams exhiben:
+> **Inserta aquí** las gráficas de diagnóstico del Random Forest, justo después de la explicación de los hiperparámetros.
 
-- una duración promedio significativamente mayor,
-- una mayor varianza en el tiempo de juego, y
-- dinámicas particulares asociadas a su estructura competitiva.
+### 5.3. XGBoost
 
-Esta homogeneidad relativa en las reglas permite asumir mayor estabilidad en la relación entre las variables predictoras y la variable objetivo, que en este caso es la **duración del partido en minutos**.
+Finalmente, probamos un **XGBoost** con 100 iteraciones de boosting secuencial. Este algoritmo optimiza de forma iterativa la función de pérdida (RMSE) y aplica regularización L1/L2 para evitar sobreajuste. Los hiperparámetros más relevantes fueron:
 
-## Criterios para la Selección de Variables
+- `n_estimators = 100`  
+- `learning_rate = 0.1`  
+- `max_depth = 6`  
+- `subsample = 1.0`  
+- `colsample_bytree = 1.0`  
+- `reg_alpha = 0`  
+- `reg_lambda = 1`  
+- `eval_metric = "rmse"`  
+- `use_label_encoder = False`  
+- `random_state = 42`  
 
-Uno de los pilares del análisis fue la construcción cuidadosa del conjunto de variables explicativas. El objetivo fue identificar únicamente aquellas variables que:
+De igual forma, generamos y colocamos las **cuatro gráficas de diagnóstico** correspondientes al XGBoost.
 
-1. Están **disponibles antes del comienzo del partido** (excluyendo cualquier variable que implique información sobre el resultado o evolución del encuentro).
-2. Son estadísticamente informativas respecto a la duración del partido.
-3. No introducen problemas de colinealidad severa ni redundancia estructural.
+> **Inserta aquí** las gráficas de XGBoost, después de describir los hiperparámetros.
 
-El proceso de selección se llevó a cabo en múltiples etapas:
+## 6. Resultados Comparativos e Interpretación
 
-### 1. Evaluación de Variables Categóricas: `tourney_name` y `round`
+Al comparar los tres enfoques (OLS, Random Forest y XGBoost), observamos lo siguiente:
 
-Estas dos variables fueron objeto de análisis específico mediante:
+- La **regresión lineal** ofrece coeficientes claros y supuestos razonablemente cumplidos, pero no captura relaciones no lineales.  
+- El **Random Forest** mejora ligeramente el error de predicción (RMSE), pero sin un incremento sustancial, lo que sugiere que con nuestras variables actuales hemos alcanzado un tope de desempeño.  
+- El **XGBoost** aporta una ganancia marginal adicional, pero requiere ajuste fino de hiperparámetros y, aun así, muestra riesgo de sobreajuste si no se controla la complejidad de los árboles.
 
-- **Visualización de distribución de frecuencias**, para verificar la representatividad de sus categorías.
-- **Información mutua (mutual information)** respecto a la variable `minutes`, con el fin de cuantificar dependencia sin asumir linealidad.
+Estos hallazgos indican que, aunque los modelos de árboles permiten explorar interacciones y no linealidades, la clave para avanzar en precisión radica en **incorporar nuevas variables contextuales** (clima, estado físico, historial de enfrentamientos) o en **aplicar técnicas de ingeniería de features** más sofisticadas.
 
-Ambas demostraron contener información relevante: la variable `round`, por ejemplo, está asociada a un patrón de incremento en la duración media a medida que se avanza en el torneo, mientras que `tourney_name` captura diferencias estructurales entre superficies y condiciones particulares de cada Slam.
+## 7. Conclusiones y Perspectivas Futuras
 
-### 2. Preprocesamiento y codificación
+En resumen, es posible predecir con cierta confiabilidad la duración de un partido de Grand Slam usando únicamente información pre-partido, siempre que se implementen correctamente las etapas de limpieza, selección de variables y prevención de fuga de información. La regresión lineal múltiple resulta un buen punto de partida para entender la influencia de cada predictor, mientras que Random Forest y XGBoost ofrecen flexibilidad adicional para capturar patrones complejos, aunque su beneficio práctico fue limitado en este caso. Para mejorar la precisión en futuras iteraciones, se recomienda:
 
-Las variables categóricas (`surface`, `tourney_name`, `round`) fueron transformadas mediante **codificación one-hot**, manteniendo todas sus componentes tras eliminar la primera categoría (dummy encoding con `drop_first=True`) para evitar dependencia lineal exacta. Se optó por preservar estas variables codificadas en su totalidad, independientemente de su correlación con otras, debido a su **valor explicativo intrínseco no colineal** y su **interpretabilidad contextual**.
+1. **Explorar variables adicionales** que aporten contexto al desempeño de los jugadores.  
+2. **Optimizar hiperparámetros** mediante técnicas de búsqueda sistemática (grid search, Bayesian).  
+3. **Investigar otras metodologías** de ensamblado y aprendizaje profundo, siempre cuidando evitar el data leakage.
 
-### 3. Diagnóstico de multicolinealidad en variables numéricas
-
-Para el conjunto de variables numéricas, se llevó a cabo un **análisis de colinealidad mediante el factor de inflación de varianza (VIF)**. Las variables con VIF significativamente superiores a 10 fueron eliminadas del diseño del modelo, al considerarse problemáticas para la estimación estable de coeficientes. Este paso se restringió a variables numéricas; las variables categóricas codificadas fueron excluidas de este filtro para preservar su rol estructural en el modelo.
-
-## Prevención del Fuga de Información (*Data Leakage*)
-
-Un aspecto crítico en todo problema de predicción es evitar el **uso de información futura en variables supuestamente predictoras**, lo que llevaría a un *overfitting* artificial y resultados irreproducibles en escenarios reales.
-
-En este análisis, abordamos explícitamente este riesgo al construir **agregados estadísticos de los jugadores (por ejemplo, porcentajes de primer servicio ganado, aces, dobles faltas, etc.) mediante ventanas temporales desfasadas**. Específicamente:
-
-- Para cada partido, las métricas del jugador se calcularon **únicamente usando partidos previos a esa fecha**, ordenados cronológicamente.
-- Se utilizaron ventanas móviles con tamaño controlado para asegurar que las estadísticas sean representativas pero nunca contaminadas por eventos futuros.
-- Esta estrategia garantiza que las variables construidas reflejan conocimiento históricamente observable **en el momento justo antes del partido**, simulando las condiciones reales de toma de decisión o pronóstico.
-
-Esta precaución metodológica es clave para asegurar la validez del modelo y su aplicabilidad en entornos productivos o simulaciones prospectivas.
-
+Con esto, se sientan las bases metodológicas y técnicas para aplicar estadística y machine learning a la optimización de eventos deportivos de alto nivel.

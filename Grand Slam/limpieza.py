@@ -279,6 +279,26 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         plt.tight_layout()
         plt.show()
 
+        #Distribution of minutes by surface
+        # Prepare the data: drop any rows missing 'minutes' or 'round'
+        df_plot = best_of_five_clean.dropna(subset=['minutes', 'surface'])
+
+        plt.figure(figsize=(12, 6))
+        sns.boxplot(
+            data=df_plot,
+            x='surface',
+            y='minutes',
+            color='steelblue',    # same color for every box
+            showfliers=False      # hide outliers
+        )
+
+        plt.title('Distribution of Match Duration (minutes) by Surface')
+        plt.xlabel('Surface')
+        plt.ylabel('Minutes')
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        plt.show()
+        
         # Step 2: Mutual Information between 'tourney_name' & 'round' and 'minutes'
         target = 'minutes'
         categorical_cols = ['tourney_name', 'round']
@@ -340,6 +360,8 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         plt.tight_layout()
         plt.show()
     
+    print(best_of_five["tourney_date"].min())
+    print(best_of_five["tourney_date"].max())
     # Step 3: Drop irrelevant or leakage-prone columns
     drop_cols = [
         'tourney_date', 'winner_name', 'loser_name', 'winner_ioc', 'loser_ioc',
