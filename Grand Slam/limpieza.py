@@ -299,6 +299,17 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         plt.tight_layout()
         plt.show()
         
+        # Tendency plot: median match duration by date
+        median_minutes_by_date = best_of_five_clean.groupby('tourney_date')['minutes'].median().reset_index()
+
+        plt.figure(figsize=(14, 6))
+        plt.plot(median_minutes_by_date['tourney_date'], median_minutes_by_date['minutes'], marker='o', linestyle='-')
+        plt.title('Median Match Duration by Tournament Date (Grand Slams)')
+        plt.xlabel('Tournament Date')
+        plt.ylabel('Median Match Duration (minutes)')
+        plt.tight_layout()
+        plt.show()
+        
         # 1) Copy your five‐set DataFrame before dropping leakage cols
         rf_df = best_of_five_clean.copy()
 
