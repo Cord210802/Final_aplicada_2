@@ -190,9 +190,17 @@ elif page == "Linear model":
 
     # Resumen y Durbin–Watson
     st.subheader("Resumen OLS")
-    # Renderizar tabla de resumen con HTML para formato mejorado
-    html_summary = model.summary().as_html()
-    components.html(html_summary, height=600, scrolling=True)
+    # Inyectar estilo para fondo blanco y texto negro
+    styled_html = f"""
+    <style>
+        table {{ background-color: white !important; color: black !important; }}
+        th, td {{ background-color: white !important; color: black !important; }}
+        .dataframe_title {{ color: #17202A; }}
+        .statsmodels {{ font-family: Arial, sans-serif; }}
+    </style>
+    {model.summary().as_html(include_plotting_data=False)}
+    """
+    components.html(styled_html, height=600, scrolling=True)
     dw = sms.durbin_watson(model.resid)
     st.write(f"Durbin–Watson: {dw:.3f}")
 
