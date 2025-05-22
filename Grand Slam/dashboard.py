@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from limpieza import main
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -7,14 +8,13 @@ from contextlib import redirect_stdout
 import os
 import pandas as pd
 
-# Agregar imports para análisis lineal
-import numpy as np
+# Agregar imports para análisis lineal\ nimport numpy as np
 import statsmodels.api as sm
 import statsmodels.stats.api as sms
 from statsmodels.stats.outliers_influence import variance_inflation_factor, OLSInfluence
 from scipy import stats
 from matplotlib.gridspec import GridSpec
-
+import numpy as np
 # Configure Seaborn globally
 sns.set(style="whitegrid", font_scale=1.2)
 
@@ -190,7 +190,9 @@ elif page == "Linear model":
 
     # Resumen y Durbin–Watson
     st.subheader("Resumen OLS")
-    st.text(model.summary().as_text())
+    # Renderizar tabla de resumen con HTML para formato mejorado
+    html_summary = model.summary().as_html()
+    components.html(html_summary, height=600, scrolling=True)
     dw = sms.durbin_watson(model.resid)
     st.write(f"Durbin–Watson: {dw:.3f}")
 
@@ -201,17 +203,8 @@ elif page == "Linear model":
     std_resid = influence.resid_studentized_internal
     leverage = influence.hat_matrix_diag
     cooks = np.array(OLSInfluence(model).cooks_distance[0])
-
-    # VIF
-    vif = pd.DataFrame({
-        'Variable': X_const.columns,
-        'VIF': [variance_inflation_factor(X_const.values, i)
-                for i in range(X_const.shape[1])]
-    })
-    st.subheader("Factores de Inflación de Varianza (VIF)")
-    st.table(vif.round(2))
-
     # Gráficos diagnósticos
+    # (resto del código de gráficos sin cambios)
     # 1. Residuos vs Ajustados
     fig1, ax1 = plt.subplots(figsize=(9, 6))
     low = sm.nonparametric.lowess(resid, fitted)
@@ -277,8 +270,3 @@ elif page == "Linear model":
     ax6.set_xlabel("Residuos", fontweight='bold')
     ax6.set_ylabel("Densidad", fontweight='bold')
     st.pyplot(fig6)
-
-    # Panel combinado (opcional)
-    fig7 = plt.figure(figsize=(16,12))
-    gs = GridSpec(2, 3, figure=fig7)
-    st.pyplot(fig7)
