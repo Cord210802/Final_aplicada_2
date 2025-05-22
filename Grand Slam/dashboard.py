@@ -8,13 +8,14 @@ from contextlib import redirect_stdout
 import os
 import pandas as pd
 
-# Agregar imports para análisis lineal\ nimport numpy as np
+# Agregar imports para análisis lineal
+import numpy as np
 import statsmodels.api as sm
 import statsmodels.stats.api as sms
 from statsmodels.stats.outliers_influence import variance_inflation_factor, OLSInfluence
 from scipy import stats
 from matplotlib.gridspec import GridSpec
-import numpy as np
+
 # Configure Seaborn globally
 sns.set(style="whitegrid", font_scale=1.2)
 
@@ -190,19 +191,18 @@ elif page == "Linear model":
 
     # Resumen y Durbin–Watson
     st.subheader("Resumen OLS")
-    # Inyectar estilo para fondo blanco y texto negro
+    # Inyectar estilo para fondo blanco y texto negro en un contenedor de fondo claro
     styled_html = f"""
     <style>
+        body {{ background-color: white; color: black; }}
         table {{ background-color: white !important; color: black !important; }}
         th, td {{ background-color: white !important; color: black !important; }}
-        .dataframe_title {{ color: #17202A; }}
-        .statsmodels {{ font-family: Arial, sans-serif; }}
     </style>
-    {model.summary().as_html(include_plotting_data=False)}
+    <div style='background-color: white; color: black; padding: 1rem; border-radius: 8px;'>
+    {model.summary().as_html()}
+    </div>
     """
-    components.html(styled_html, height=600, scrolling=True)
-    dw = sms.durbin_watson(model.resid)
-    st.write(f"Durbin–Watson: {dw:.3f}")
+    components.html(styled_html, height=650, scrolling=True)
 
     # Cálculos diagnósticos
     influence = model.get_influence()
