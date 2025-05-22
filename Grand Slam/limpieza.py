@@ -42,64 +42,79 @@ from sklearn.model_selection import train_test_split
 # STEP 1: DATA LOADING AND CLEANING (from limpieza_grupos.py)
 # ============================================================================================
 
-def load_and_clean_data(file_path, year_start = None, year_end = None):
+import pandas as pd
+import numpy as np
+
+def load_and_clean_data(file_path, year_start=None, year_end=None):
     """
-    Load the ATP matches data and perform initial cleaning
+    Load the ATP matches data, re-label winner/loser by pre-match ranking,
+    and perform initial cleaning and feature engineering.
     
     Args:
         file_path (str): Path to the ATP matches CSV file
+        year_start (int, optional): Minimum tournament year to include
+        year_end   (int, optional): Maximum tournament year to include
         
     Returns:
-        pd.DataFrame: Cleaned dataset with initial feature engineering
+        pd.DataFrame: Cleaned dataset with original columns plus:
+            - winner_/loser_ always refers to the higher/lower ranked player
+            - rank_diff, avg_rank, min_rank, age_diff, avg_age, close_ranking
     """
-    
     # 1) Load the CSV
     matches = pd.read_csv(file_path)
     
-    # 2) Clean the dataset
-    df = matches.dropna(subset=['minutes'])   # drop matches without a duration
+    # 2) Drop matches without a duration
+    df = matches.dropna(subset=['minutes'])
     
-    # Filter for Grand Slam and Masters tournaments
-    t_lev = ["G", "M"]
-    df = df[df['tourney_level'].isin(t_lev)]
+    # 3) Filter for Grand Slam and Masters tournaments
+    df = df[df['tourney_level'].isin(["G", "M"])]
     
-    # Convert all tournament names to lowercase and strip whitespace
+    # 4) Normalize text fields
     df['tourney_name'] = df['tourney_name'].str.lower().str.strip()
+    df['tourney_date']  = pd.to_datetime(df['tourney_date'].astype(str),
+                                         format='%Y%m%d')
     
-    # Convert tourney_date to datetime
-    df['tourney_date'] = pd.to_datetime(
-        df['tourney_date'].astype(str),
-        format='%Y%m%d'
-    )
-     # Optional year filtering
+    # 5) Optional year filtering
     if year_start is not None:
         df = df[df['tourney_date'].dt.year >= year_start]
     if year_end is not None:
         df = df[df['tourney_date'].dt.year <= year_end]
-    # Create DataFrame for modeling
-    df_model = df.copy()
     
-    # Drop columns with high missing values
+    # 6) Make a working copy and drop high‐missing seed columns
+    df_model = df.copy()
     df_model = df_model.drop(columns=["loser_seed", "winner_seed"])
     
-    # Feature Engineering
+    # 7) Re-label winner/loser by pre-match ranking points
+    #    Whoever has MORE rank_points becomes 'winner'
+    mask = df_model['loser_rank_points'] > df_model['winner_rank_points']
     
-    # Ranking-based features
-    df_model['rank_diff'] = abs(df_model['winner_rank'] - df_model['loser_rank'])
-    df_model['avg_rank'] = (df_model['winner_rank'] + df_model['loser_rank']) / 2
-    df_model['min_rank'] = np.minimum(df_model['winner_rank'], df_model['loser_rank'])
+    paired_suffixes = [
+        # per‐match stats
+        '1stIn','1stWon','2ndWon','SvGms','ace','bpFaced','bpSaved','df','svpt',
+        # personal / ID fields
+        'age','entry','hand','ht','id','ioc','name','rank','rank_points'
+    ]
     
-    # Age-based features
-    df_model['age_diff'] = abs(df_model['winner_age'] - df_model['loser_age'])
-    df_model['avg_age'] = (df_model['winner_age'] + df_model['loser_age']) / 2
+    for suf in paired_suffixes:
+        wcol = f'w_{suf}'
+        lcol = f'l_{suf}'
+        if wcol in df_model.columns and lcol in df_model.columns:
+            # swap values where mask is True
+            df_model.loc[mask, [wcol, lcol]] = df_model.loc[mask, [lcol, wcol]].values
     
-    # Parity indicators
+    # 8) Recompute derived, non-leaky features
+    df_model['rank_diff']     = (df_model['winner_rank'] - df_model['loser_rank']).abs()
+    df_model['avg_rank']      = (df_model['winner_rank'] + df_model['loser_rank']) / 2
+    df_model['min_rank']      = np.minimum(df_model['winner_rank'], df_model['loser_rank'])
+    df_model['age_diff']      = (df_model['winner_age']  - df_model['loser_age']).abs()
+    df_model['avg_age']       = (df_model['winner_age'] + df_model['loser_age']) / 2
     df_model['close_ranking'] = (df_model['rank_diff'] < 50).astype(int)
     
-    # Surface standardization
+    # 9) Standardize surface labels
     df_model['surface'] = df_model['surface'].replace('Carpet', 'Hard')
     
     return df_model
+
 
 # ============================================================================================
 # STEP 2: FIVE-SET MATCH PROCESSING (from analisis_grupos.py)
@@ -469,3 +484,4 @@ def main(file_path, show_plots=True, year_start=None, year_end=None):
 if __name__ == "__main__":
     file_path = "/home/cord2108/ITAM/Aplicada/Proyecto_final/atp_data/atp_matches_till_2022.csv"
     final_data = main(file_path, show_plots=True)
+    
