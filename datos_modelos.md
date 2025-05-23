@@ -1,3 +1,49 @@
+# VIF variables data completa
+
+📊 VIF Scores (Numerical Features Only):
+               feature          VIF
+13             avg_age          inf
+2           winner_age          inf
+4            loser_age          inf
+5          winner_rank          inf
+7           loser_rank          inf
+9            rank_diff          inf
+10            avg_rank          inf
+11            min_rank          inf
+0                const  2368.444407
+17          w_avg_svpt    88.948554
+27          l_avg_svpt    83.335360
+29        l_avg_1stWon    64.619216
+23       w_avg_bpFaced    62.546889
+19        w_avg_1stWon    58.613461
+33       l_avg_bpFaced    58.386449
+18         w_avg_1stIn    33.006886
+28         l_avg_1stIn    30.999727
+22       w_avg_bpSaved    26.709071
+32       l_avg_bpSaved    26.609207
+30        l_avg_2ndWon    19.270185
+20        w_avg_2ndWon    18.378051
+31         l_avg_SvGms    18.088745
+21         w_avg_SvGms    16.302974
+35   round_group_Other     7.723612
+36      round_group_QF     5.081065
+34       l_avg_minutes     3.865733
+24       w_avg_minutes     3.597768
+37      round_group_SF     2.967522
+15           w_avg_ace     2.771293
+25           l_avg_ace     2.717601
+16            w_avg_df     1.978465
+8    loser_rank_points     1.880238
+6   winner_rank_points     1.879625
+26            l_avg_df     1.812670
+14       close_ranking     1.594410
+1            winner_ht     1.364780
+3             loser_ht     1.331076
+12            age_diff     1.041457
+
+❌ Dropping high VIF features: ['winner_age', 'loser_age', 'winner_rank', 'loser_rank', 'rank_diff', 'avg_rank', 'min_rank', 'avg_age', 'w_avg_svpt', 'w_avg_1stIn', 'w_avg_1stWon', 'w_avg_2ndWon', 'w_avg_SvGms', 'w_avg_bpSaved', 'w_avg_bpFaced', 'l_avg_svpt', 'l_avg_1stIn', 'l_avg_1stWon', 'l_avg_2ndWon', 'l_avg_SvGms', 'l_avg_bpSaved', 'l_avg_bpFaced']
+
+
 # Regresion lineal
 
 Starting Tennis Match Duration Analysis...
