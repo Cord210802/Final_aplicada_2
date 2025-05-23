@@ -471,4 +471,4 @@ def main(file_path, show_plots=True, year_start=None, year_end=None):
 if __name__ == "__main__":
     file_path = "/home/cord2108/ITAM/Aplicada/Proyecto_final/atp_data/atp_matches_till_2022.csv"
     final_data = main(file_path, show_plots=False)
-    
+    final_data.to_csv("/home/cord2108/ITAM/Aplicada/Proyecto_final/atp_data/final_tennis_data.csv", index=False)
