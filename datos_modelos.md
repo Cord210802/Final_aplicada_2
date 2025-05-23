@@ -1,3 +1,19 @@
+# Variables de los modelos
+'Model 1 - Basic': ['round_group_QF', 'round_group_SF', 'round_group_Other', 
+                           'surface_Grass', 'surface_Hard', 'winner_rank_points', 'loser_rank_points'],
+        
+        'Model 2 - With Player Stats': ['round_group_QF', 'round_group_SF', 'round_group_Other',
+                                       'surface_Grass', 'surface_Hard', 'winner_rank_points', 
+                                       'loser_rank_points', 'w_avg_ace', 'w_avg_df', 'l_avg_ace', 'l_avg_df'],
+        
+        'Model 3 - With Historical Minutes': ['round_group_QF', 'round_group_SF', 'round_group_Other',
+                                            'surface_Grass', 'surface_Hard', 'winner_rank_points', 
+                                            'loser_rank_points', 'w_avg_minutes', 'l_avg_minutes'],
+        
+        'Model 4 - Full Model': ['age_diff', 'round_group_QF', 'round_group_SF', 'round_group_Other',
+                                'surface_Grass', 'surface_Hard', 'winner_rank_points', 'loser_rank_points',
+                                'w_avg_ace', 'w_avg_df', 'w_avg_minutes', 'l_avg_ace', 'l_avg_df', 'l_avg_minutes']
+ 
 # VIF variables data completa
 
 📊 VIF Scores (Numerical Features Only):
