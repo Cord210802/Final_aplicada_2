@@ -29,7 +29,7 @@ if page == "Home":
 
     # Sidebar settings for Home
     st.sidebar.header("Dashboard Settings")
-    file_path = "/home/cord2108/ITAM/Aplicada/Proyecto_final/atp_data/atp_matches_till_2022.csv"
+    file_path = "atp_data/atp_matches_till_2022.csv"
     year_start, year_end = st.sidebar.slider(
         "Year Range",
         1992, 2021,
@@ -65,7 +65,7 @@ if page == "Home":
     # Prepare best_of_five copy
         
     # ruta de la carpeta donde quieres guardar el CSV
-    dir_path = "/home/cord2108/ITAM/Aplicada/Proyecto_final/atp_data"
+    dir_path = "atp_data"
 
     # nombre del archivo CSV
     filename = "best_of_five.csv"
@@ -76,7 +76,7 @@ if page == "Home":
     # escribe el DataFrame sin la columna de índice
     final_data.to_csv(output_path, index=False)
     
-    best_of_five = pd.read_csv("/home/cord2108/ITAM/Aplicada/Proyecto_final/atp_data/best_of_five.csv")
+    best_of_five = pd.read_csv("atp_data/best_of_five.csv")
 
     # Create three tabs
     tab1, tab2, tab3 = st.tabs([
@@ -149,7 +149,7 @@ if page == "Home":
 elif page == "Reporte":
     # --- Reporte page content ---
     st.title("Reporte Completo")
-    md_path = "/home/cord2108/ITAM/Aplicada/Proyecto_final/reporte.md"
+    md_path = "reporte.md"
     if os.path.exists(md_path):
         with open(md_path, "r", encoding="utf-8") as f:
             report_md = f.read()
@@ -160,7 +160,7 @@ elif page == "Reporte":
 elif page == "Variables":
     # --- Variables page content ---
     st.title("Variables")
-    md_path_vars = "/home/cord2108/ITAM/Aplicada/Proyecto_final/variables.md"
+    md_path_vars = "variables.md"
     if os.path.exists(md_path_vars):
         with open(md_path_vars, "r", encoding="utf-8") as f:
             vars_md = f.read()
@@ -172,7 +172,7 @@ elif page == "Linear model":
     st.title("Diagnósticos del Modelo Lineal")
 
     # Mostrar markdown de descripción
-    md_path_lm = "/home/cord2108/ITAM/Aplicada/Proyecto_final/LM_S.md"
+    md_path_lm = "LM_S.md"
     if os.path.exists(md_path_lm):
         with open(md_path_lm, "r", encoding="utf-8") as f:
             report_md = f.read()
@@ -182,7 +182,7 @@ elif page == "Linear model":
 
     # Cargar datos y ajustar modelo OLS
     df_lm = pd.read_csv(
-        "/home/cord2108/ITAM/Aplicada/Proyecto_final/atp_data/best_of_five.csv"
+        "atp_data/best_of_five.csv"
     )
     y = df_lm['minutes']
     X = df_lm.drop(columns=['minutes'])

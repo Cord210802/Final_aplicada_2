@@ -256,33 +256,34 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         for col in ['tourney_name', 'round']:
             if col in df_check.columns:
                 plt.figure(figsize=(10, 4))
-                sns.countplot(data=df_check, x=col, order=df_check[col].value_counts().index)
-                plt.xticks(rotation=45)
-                plt.title(f"Distribution of {col}")
+                sns.countplot(data=df_check, x=col, order=df_check[col].value_counts().index, color = 'steelblue')
+                plt.xticks(rotation=0)
+                plt.title(f"Distribución de {col}")
+                plt.ylabel('partidos')
                 plt.tight_layout()
                 plt.show()
         
-        #Distribution of minutes by round
+        #Distribución de minutes by round
         # Prepare the data: drop any rows missing 'minutes' or 'round'
         df_plot = best_of_five_clean.dropna(subset=['minutes', 'round'])
 
         plt.figure(figsize=(12, 6))
         sns.boxplot(
-            data=df_plot,
+            data=df_plot.sort_values(by='minutes'),
             x='round',
             y='minutes',
             color='steelblue',    # same color for every box
             showfliers=False      # hide outliers
         )
 
-        plt.title('Distribution of Match Duration (minutes) by Round')
-        plt.xlabel('Round')
-        plt.ylabel('Minutes')
-        plt.xticks(rotation=45, ha='right')
+        plt.title('Distribución de duración por round')
+        plt.xlabel('')
+        plt.ylabel('minutos')
+        plt.xticks(rotation=0, ha='right')
         plt.tight_layout()
         plt.show()
 
-        #Distribution of minutes by surface
+        #Distribución de minutes by surface
         # Prepare the data: drop any rows missing 'minutes' or 'round'
         df_plot = best_of_five_clean.dropna(subset=['minutes', 'surface'])
 
@@ -295,10 +296,10 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
             showfliers=False      # hide outliers
         )
 
-        plt.title('Distribution of Match Duration (minutes) by Surface')
-        plt.xlabel('Surface')
-        plt.ylabel('Minutes')
-        plt.xticks(rotation=45, ha='right')
+        plt.title('Distribución de duración por superficie')
+        plt.xlabel('')
+        plt.ylabel('minutos')
+        plt.xticks(rotation=0, ha='right')
         plt.tight_layout()
         plt.show()
         
@@ -306,10 +307,10 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
         median_minutes_by_date = best_of_five_clean.groupby('tourney_date')['minutes'].median().reset_index()
 
         plt.figure(figsize=(14, 6))
-        plt.plot(median_minutes_by_date['tourney_date'], median_minutes_by_date['minutes'], marker='o', linestyle='-')
-        plt.title('Median Match Duration by Tournament Date (Grand Slams)')
-        plt.xlabel('Tournament Date')
-        plt.ylabel('Median Match Duration (minutes)')
+        plt.plot(median_minutes_by_date['tourney_date'], median_minutes_by_date['minutes'], linestyle='-',color = 'steelblue')
+        plt.title('Mediana de duración (Grand Slams)')
+        plt.xlabel('Año')
+        plt.ylabel('minutos')
         plt.tight_layout()
         plt.show()
         
@@ -339,17 +340,17 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
 
         # 7) Compute feature importances
         importances = pd.Series(rf.feature_importances_, index=X_clean.columns)
-        importances = importances.sort_values(ascending=False)
+        importances = importances.sort_values()
 
         # 9) Plot them
-        plt.figure(figsize=(12, 8))
-        importances.plot(kind='bar')
-        plt.title("RF Feature Importances (Numerical Variables Only)")
-        plt.xlabel("Feature")
-        plt.ylabel("Importance")
-        plt.xticks(rotation=45, ha='right')
-        plt.tight_layout()
-        plt.show()
+        # plt.figure(figsize=(12, 8))
+        # importances.plot(kind='barh',color = 'steelblue')
+        # plt.title("RF Feature Importances (Numerical Variables Only)")
+        # plt.xlabel("Feature")
+        # plt.ylabel("Importance")
+        # #plt.xticks(rotation=90, ha='right')
+        # plt.tight_layout()
+        # plt.show()
 
     # Step 3: Drop irrelevant or leakage-prone columns
     drop_cols = [
@@ -424,11 +425,13 @@ def analyze_grand_slam_matches(best_of_five_clean, show_plots=True):
     vif_data['VIF'] = [variance_inflation_factor(X_vif.values, i) for i in range(X_vif.shape[1])]
     
     print("\n📊 VIF Scores (Numerical Features Only):")
-    print(vif_data.sort_values("VIF", ascending=False))
+    print(vif_data.sort_values("VIF", ascending=False).head(3))
+    print("...")
+    print(vif_data.sort_values("VIF", ascending=False).tail(3))
     
     # Step 9: Drop high VIF features (keep categoricals untouched)
     high_vif_features = vif_data[(vif_data['VIF'] > 10) & (vif_data['feature'] != 'const')]['feature'].tolist()
-    print(f"\n❌ Dropping high VIF features: {high_vif_features}")
+    print(f"\n❌ Dropping high VIF features")
     
     X_final = X_no_outliers.drop(columns=high_vif_features)
     
